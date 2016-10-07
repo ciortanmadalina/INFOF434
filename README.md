@@ -1,1 +1,1 @@
-# INFOF434
+# INFOF434 exercises
