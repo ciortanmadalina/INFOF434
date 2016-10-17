@@ -8,6 +8,11 @@ import numpy as np
 gap = -6
 endGap = 0
 
+# values used in diagonal matrix
+up = 1
+left = -1
+diagonal = 2
+
 def read_sequences(filename):
     with open(filename, 'r') as f:
         s1,s2 = '', ''
@@ -35,19 +40,33 @@ def read_pam(filename):
     return pam
 
 def align(s1, s2):
-    m = initializeMatrix(s1, s2)
+    m, directions = initializeMatrix(s1, s2)
     for i in range(1, m.shape[0]) :
         for j in range (1,m.shape[1]):
-            m[i,j] = score(m,i,j)
-    print m
-    return m
+            m[i,j] = score(m, directions, i,j)
+    print m,'\n', directions
+    return m, directions
 
 
-def score(m, i, j):
+def score(m, directions, i, j):
+    gapCost = gap
+    if i == m.shape[0]-1 or j == m.shape[1]-1:
+        gapCost = 0
+
     diagonalScore = m[i-1, j-1] + pamScoreAtIndex(i,j)
-    leftScore = m[i, j-1] + gap
-    topScore = m[i-1, j] + gap
-    return max(diagonalScore, leftScore, topScore)
+    leftScore = m[i, j-1] + gapCost
+    topScore = m[i-1, j] + gapCost
+
+    maxScore = max(diagonalScore, leftScore, topScore)
+
+    #load directions matrix
+    if maxScore == leftScore:
+        directions [i,j] = up
+    if maxScore == topScore:
+        directions [i,j] = left
+    if maxScore == diagonalScore:
+        directions [i,j] = diagonal
+    return maxScore
 
 def pamScoreAtIndex(i,j):
     # we substract 1 from indexes because in the matrix we prefilled the first columns
@@ -59,64 +78,32 @@ def pamScoreAtIndex(i,j):
 
 def initializeMatrix (s1, s2):
     m = np.zeros((len(s1)+1, len(s2)+1))
+    directions = np.zeros((len(s1)+1, len(s2)+1))
     for i in range(len(s1) + 1):
         m[i, 0 ] = i * endGap
 
     for i in range(len(s2) + 1):
         m[0,i] = i * endGap
-    return m
+    return m, directions
 
-def alignedSequences1(m) :
+def alignedSequences(directions) :
     r1, r2 = '', ''
-    i, j =  maxScoreCoordinates(m)
+
+    i =  directions.shape[0]-1
+    j =  directions.shape[1]-1
     while i > 0 and j > 0 :
-        diagonalScore = m[i-1, j-1]
-        leftScore = m[i, j-1]
-        topScore = m[i-1,j]
-        pamScore = pamScoreAtIndex(i,j)
-        currentScore = m[i, j]
-        if currentScore == (diagonalScore + pamScore):
+        currentScore = directions[i, j]
+        if currentScore == diagonal:
             r1 = s1[i-1] + r1
             r2 = s2[j-1] + r2
 
-            i = decrementIndex(i)
-            j = decrementIndex(j)
-        if currentScore == leftScore + gap :
-            r1 = '-' + r1
-            j = decrementIndex(j)
-        if currentScore == topScore + gap:
-            r1 = s1[i-1] + r1
-            r2 = '-' + r2
-            i = decrementIndex(i)
-
-    return r1, r2
-
-def alignedSequences(m) :
-    r1, r2 = '', ''
-
-    i, j =  maxScoreCoordinates(m)
-
-    while len(r1) < len(s1) :
-        diagonalScore = m[i-1, j-1]
-        leftScore = m[i, j-1]
-        topScore = m[i-1,j]
-        pamScore = pamScoreAtIndex(i,j)
-        currentScore = m[i, j]
-
-        if currentScore == (diagonalScore + pamScore):
-            #diagonal
-            r1 = s1[i-1] + r1
-            r2 = s2[j-1] + r2
             i -= 1
             j -= 1
-
-        if currentScore == leftScore + gap :
-            #left
+        if currentScore == up :
             r1 = '-' + r1
+            r2 = s2[j-1] + r2
             j -= 1
-
-        if currentScore == topScore + gap:
-            #top
+        if currentScore == left:
             r1 = s1[i-1] + r1
             r2 = '-' + r2
             i -=1
@@ -165,6 +152,6 @@ def alignmentScore(m):
 
 s1,s2 = read_sequences('sequences.txt')
 pam = read_pam('pam250.tab')
-m = align(s1,s2)
-print 'Score ' , alignmentScore(m)
-print alignedSequences(m)
+m, directions = align(s1,s2)
+#print 'Score ' , alignmentScore(m)
+print alignedSequences(directions)
