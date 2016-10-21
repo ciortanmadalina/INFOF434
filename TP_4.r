@@ -75,20 +75,27 @@ firstCodonsPlus<-function(chr, annotations){
   startCodon
 }
 
+firstCodonsMinus<-function(chr, annotations){
+  startCodon <- reverseComplement(DNAStringSet(chr, start= annotations$cdsStart -2, end = annotations$cdsStart + 3))
+  startCodon <- startCodon[grep('ATG', startCodon),]
+  startCodon <- substring(startCodon, first = 4, last = 6)
+  startCodon
+}
+
 firstCodon21plus <- firstCodonsPlus(chr21, annotation_21_plus)
-firstCodon21minus <- firstCodonsPlus(chr21, annotation_21_minus)
+firstCodon21minus <- firstCodonsMinus(chr21, annotation_21_minus)
 
 firstCodon22plus <- firstCodonsPlus(chr22, annotation_22_plus)
-firstCodon22minus <- firstCodonsPlus(chr22, annotation_22_minus)
+firstCodon22minus <- firstCodonsMinus(chr22, annotation_22_minus)
 
 # output all histograms to pdf
 pdf("firstCodonDistribution.pdf")
 
-plot(table(firstCodon21plus), main = 'First codon distribution chr 21 +', xlab = 'First codon', ylab = 'Frequency')
-barplot(table(firstCodon21minus), main = 'First codon distribution chr 21 -', xlab = 'First codon', ylab = 'Frequency')
+plot(table(firstCodon21plus), main = 'First codon after ATG distribution chr 21 +', xlab = 'First codon', ylab = 'Frequency')
+barplot(table(firstCodon21minus), main = 'First codon after ATG distribution chr 21 -', xlab = 'First codon', ylab = 'Frequency')
 
-plot(table(firstCodon22plus), main = 'First codon distribution chr 22 +', xlab = 'First codon', ylab = 'Frequency')
-barplot(table(firstCodon22minus), main = 'First codon distribution chr 22 -', xlab = 'First codon', ylab = 'Frequency')
+plot(table(firstCodon22plus), main = 'First codon after ATG distribution chr 22 +', xlab = 'First codon', ylab = 'Frequency')
+barplot(table(firstCodon22minus), main = 'First codon after ATG distribution chr 22 -', xlab = 'First codon', ylab = 'Frequency')
 
 
 dev.off()
